@@ -40,7 +40,9 @@ This repository is an independent implementation built from the published academ
 
 ## License
 
-CC BY-NC-SA 4.0 — see [LICENSE.md](LICENSE.md). Share it, adapt it, use it in your own course — just credit the author and keep any adaptation under the same license.
+[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) — public domain dedication; see [LICENSE](LICENSE). Copy, adapt, host, or sell it, with no permission needed. A citation is appreciated but not required.
+
+The dedication covers this implementation only: the code, interface, and debrief text. The underlying exercise design is published academic methodology (Forrester; Sterman) and was never this repository's to license.
 
 ## Citation
 

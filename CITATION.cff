@@ -11,7 +11,7 @@ authors:
 date-released: 2026-10-16
 url: "https://jncohen.commons.gc.cuny.edu/supply-chain-simulator/"
 repository-code: "https://github.com/jncohen/supply-chain-simulation"
-license: "CC-BY-NC-SA-4.0"
+license: "CC0-1.0"
 keywords:
   - supply-chain
   - bullwhip-effect
