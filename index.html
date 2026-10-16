@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Free classroom simulation of the bullwhip effect: an independent implementation of the Beer Distribution Game exercise, not affiliated with MIT. One device per group, no accounts.">
+<title>Supply Chain Simulator — A Free, Independent Version of the Beer Distribution Game Exercise</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root {
+    --jnc-shell: 900px;
+    --jnc-gutter: 40px;
+    --jnc-bg: #f6f4ee;
+    --jnc-text: #1b1b18;
+    --jnc-blue: #234063;
+    --jnc-muted: #6c685f;
+    --jnc-faint: #9a968b;
+    --jnc-rule: #dcd7ca;
+    --jnc-serif: 'Source Serif 4', Georgia, serif;
+    --jnc-sans: Helvetica, Arial, sans-serif;
+    --jnc-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+    --retailer: #234063;
+    --wholesaler: #5c6f4f;
+    --distributor: #8a5a3a;
+    --factory: #5a4a73;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; min-height: 100%;
+    background: var(--jnc-bg); color: var(--jnc-text);
+    font-family: var(--jnc-serif);
+  }
+  #app { max-width: var(--jnc-shell); margin: 0 auto; padding: 40px var(--jnc-gutter) 80px; }
+  @media (max-width: 700px) { #app { padding: 28px 20px 60px; } }
+
+  .eyebrow {
+    font-family: var(--jnc-mono); text-transform: uppercase; letter-spacing: 0.08em;
+    font-size: 11px; color: var(--jnc-muted); margin: 0 0 10px;
+  }
+  h1 {
+    font-family: var(--jnc-serif); font-weight: 700; font-size: 1.9rem; line-height: 1.2;
+    margin: 0 0 6px; color: var(--jnc-text);
+  }
+  h2 {
+    font-family: var(--jnc-serif); font-weight: 600; font-size: 1.25rem; margin: 0 0 14px;
+  }
+  .dek { font-family: var(--jnc-sans); color: var(--jnc-muted); font-size: 0.98rem; margin: 0 0 28px; line-height: 1.5; }
+  p { line-height: 1.6; }
+
+  .rule { border: none; border-top: 1px solid var(--jnc-rule); margin: 28px 0; }
+
+  .card {
+    background: #fff; border: 1px solid var(--jnc-rule); border-radius: 0;
+    padding: 28px; margin-bottom: 20px;
+  }
+
+  button, .btn {
+    font-family: var(--jnc-mono); font-size: 0.82rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; padding: 13px 26px; border-radius: 0; border: 1px solid var(--jnc-blue);
+    cursor: pointer; background: var(--jnc-blue); color: #fff; transition: opacity 0.15s;
+    display: inline-block; text-decoration: none;
+  }
+  button:hover, .btn:hover { opacity: 0.85; }
+  button.secondary, .btn.secondary { background: transparent; color: var(--jnc-blue); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  input[type=number], input[type=text] {
+    font-family: var(--jnc-serif); font-size: 1.3rem; padding: 10px 14px;
+    border-radius: 0; border: 1px solid var(--jnc-text); width: 140px; text-align: center;
+    background: #fff; color: var(--jnc-text);
+  }
+  input[type=text].seed { width: 220px; font-size: 1rem; text-align: left; font-family: var(--jnc-mono); }
+  input:focus { outline: none; border-color: var(--jnc-blue); }
+  label {
+    display: block; font-family: var(--jnc-mono); font-size: 10px; color: var(--jnc-muted);
+    margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 120px; background: var(--jnc-bg); border: 1px solid var(--jnc-rule); padding: 12px 14px; }
+  .stat .val { font-family: var(--jnc-serif); font-size: 1.5rem; font-weight: 600; }
+  .stat.neg .val { color: #8a3a3a; }
+
+  .role-badge {
+    display: inline-block; padding: 5px 14px; color: #fff; font-family: var(--jnc-mono);
+    font-weight: 600; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .privacy-screen { text-align: center; padding: 90px 20px; }
+  .privacy-screen .glyph { font-family: var(--jnc-mono); font-size: 2rem; letter-spacing: 0.1em; margin: 20px 0; color: var(--jnc-muted); }
+
+  table { width: 100%; border-collapse: collapse; font-family: var(--jnc-sans); font-size: 0.88rem; }
+  th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--jnc-rule); }
+  th { font-family: var(--jnc-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--jnc-muted); font-weight: 500; }
+  th:first-child, td:first-child { text-align: left; }
+
+  .footer-links { margin-top: 30px; font-family: var(--jnc-mono); font-size: 12px; color: var(--jnc-muted); }
+  .footer-links a { color: var(--jnc-blue); cursor: pointer; text-decoration: underline; margin-right: 20px; }
+
+  details.card summary { cursor: pointer; font-family: var(--jnc-sans); font-weight: 600; }
+  details.card[open] summary { margin-bottom: 14px; }
+
+  .debrief-q {
+    background: var(--jnc-bg); border-left: 3px solid var(--jnc-blue); padding: 14px 18px;
+    margin: 12px 0; font-family: var(--jnc-sans); font-size: 0.95rem;
+  }
+  canvas { max-width: 100%; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; font-family: var(--jnc-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--jnc-muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 11px; height: 11px; display: inline-block; }
+  .progress { font-family: var(--jnc-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--jnc-muted); margin-bottom: 6px; }
+
+  .colophon {
+    margin-top: 50px; padding-top: 24px; border-top: 1px solid var(--jnc-rule);
+    font-family: var(--jnc-sans); font-size: 0.82rem; color: var(--jnc-muted); line-height: 1.6;
+  }
+  .colophon .cc-badge {
+    font-family: var(--jnc-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+    border: 1px solid var(--jnc-rule); padding: 3px 8px; display: inline-block; margin-top: 8px;
+  }
+  .fs-toggle {
+    position: fixed; top: 14px; right: 14px; font-family: var(--jnc-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; background: #fff;
+    border: 1px solid var(--jnc-rule); cursor: pointer; z-index: 100; color: var(--jnc-muted);
+  }
+
+  .site-footer {
+    max-width: var(--jnc-shell); margin: 0 auto; padding: 18px var(--jnc-gutter) 28px;
+    border-top: 1px solid var(--jnc-rule);
+    font-family: var(--jnc-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--jnc-muted); text-align: center;
+  }
+  .site-footer a { color: var(--jnc-muted); text-decoration: underline; }
+  .site-footer a:hover { color: var(--jnc-blue); }
+  @media (max-width: 700px) { .site-footer { padding: 16px 20px 24px; } }
+</style>
+</head>
+<body>
+<button class="fs-toggle" id="fsToggle" onclick="toggleFullscreen()">⤢ Full screen</button>
+<div id="app"></div>
+<footer class="site-footer">
+  <a href="https://jncohen.commons.gc.cuny.edu" target="_blank" rel="noopener">Joseph N. Cohen, Dept. of Sociology, CUNY Queens College</a>
+</footer>
+
+<script>
+/* =========================================================================
+   SIMULATION ENGINE — unchanged from the verified version.
+   Reproduces the classic production-distribution exercise (Forrester 1958 /
+   Sterman 1989): 4-tier chain, 2-round order delay, 2-round shipping delay,
+   $0.50/unit holding cost, $1.00/unit backorder cost, and a single
+   permanent step in customer demand (magnitude and round now seeded).
+   ========================================================================= */
+
+const HOLD_COST = 0.5, BACK_COST = 1.0;
+const ROLE_NAMES = ['Retailer', 'Wholesaler', 'Distributor', 'Factory'];
+const ROLE_COLORS_HEX = ['#234063', '#5c6f4f', '#8a5a3a', '#5a4a73'];
+const UPSTREAM_LABEL = ['Wholesaler', 'Distributor', 'Factory', 'the brewery (production)'];
+const DOWNSTREAM_LABEL = ['your customers', 'the Retailer', 'the Wholesaler', 'the Distributor'];
+
+// 20 seeds verified pairwise-distinct on (shockRound, newLevel) — see the repo's
+// verification log. Enough for 20 groups/sections to each get a genuinely
+// different scenario, picked from the UI rather than typed by hand.
+const PRESET_SCENARIOS = [
+  'scenario-1', 'scenario-2', 'scenario-3', 'scenario-4', 'scenario-5',
+  'scenario-6', 'scenario-7', 'scenario-8', 'scenario-9', 'scenario-11',
+  'scenario-12', 'scenario-13', 'scenario-14', 'scenario-15', 'scenario-16',
+  'scenario-20', 'scenario-24', 'scenario-26', 'scenario-27', 'scenario-29',
+];
+
+// Seeded PRNG (mulberry32) so an instructor can reproduce, or vary, a scenario.
+function hashSeed(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return () => {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  };
+}
+function mulberry32(seedInt) {
+  let a = seedInt;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function makeDemandSchedule(seedStr) {
+  const seedHash = hashSeed(seedStr || String(Date.now() % 100000));
+  const rng = mulberry32(Math.floor(seedHash() * 4294967296));
+  const shockRound = 4 + Math.floor(rng() * 4);      // round 4, 5, 6, or 7
+  const step = 2 + Math.floor(rng() * 8);             // +2..+9 (32 combinations total — enough headroom for 20+ distinct scenarios)
+  const baseline = 4;
+  return {
+    shockRound, newLevel: baseline + step, baseline,
+    fn: (round) => (round < shockRound ? baseline : baseline + step),
+  };
+}
+
+function makeRole(i) {
+  return {
+    idx: i, name: ROLE_NAMES[i],
+    inventory: 12, backlog: 0,
+    shipIn: [4, 4], orderIn: [4, 4],
+    incomingOrderThisRound: null, shippedThisRound: null,
+    orderHistory: [], inventoryHistory: [], backlogHistory: [],
+    holdingCostHistory: [], backorderCostHistory: [],
+    cumulativeCost: 0,
+  };
+}
+
+function newGame(totalRounds, seedStr) {
+  return {
+    totalRounds,
+    seedStr,
+    demand: makeDemandSchedule(seedStr),
+    round: 0,
+    roles: ROLE_NAMES.map((_, i) => makeRole(i)),
+    demandHistory: [],
+    phase: 'setup',
+    currentRoleIdx: 0,
+  };
+}
+
+function processRoundArrivals(game) {
+  game.round += 1;
+  const round = game.round;
+  const roles = game.roles;
+  const demand = game.demand.fn(round);
+  game.demandHistory.push(demand);
+
+  const shipped = [];
+  for (let i = 0; i < 4; i++) {
+    const r = roles[i];
+    r.inventory += r.shipIn.shift();
+    const incomingOrder = i === 0 ? demand : r.orderIn.shift();
+    r.incomingOrderThisRound = incomingOrder;
+    const need = incomingOrder + r.backlog;
+    const ship = Math.min(r.inventory, need);
+    r.backlog = need - ship;
+    r.inventory -= ship;
+    shipped[i] = ship;
+    r.shippedThisRound = ship;
+
+    const hc = r.inventory * HOLD_COST, bc = r.backlog * BACK_COST;
+    r.holdingCostHistory.push(hc);
+    r.backorderCostHistory.push(bc);
+    r.cumulativeCost += hc + bc;
+    r.inventoryHistory.push(r.inventory);
+    r.backlogHistory.push(r.backlog);
+  }
+  for (let i = 1; i < 4; i++) roles[i - 1].shipIn.push(shipped[i]);
+}
+
+function submitOrder(game, roleIdx, qty) {
+  const roles = game.roles;
+  qty = Math.max(0, Math.round(qty));
+  roles[roleIdx].orderHistory.push(qty);
+  if (roleIdx === 3) roles[3].shipIn.push(qty);
+  else roles[roleIdx + 1].orderIn.push(qty);
+}
+
+/* =========================================================================
+   UI
+   ========================================================================= */
+
+let game = null;
+const app = document.getElementById('app');
+
+function render() {
+  if (!game || game.phase === 'setup') return renderSetup();
+  if (game.phase === 'privacy') return renderPrivacy();
+  if (game.phase === 'decision') return renderDecision();
+  if (game.phase === 'roundDone') return renderRoundDone();
+  if (game.phase === 'end') return renderEnd();
+}
+
+function renderSetup() {
+  const savedSeed = game && game.seedStr ? game.seedStr : '';
+  app.innerHTML = `
+    <p class="eyebrow">Sensemaking · Exercise</p>
+    <h1>Supply Chain Simulator</h1>
+    <p class="dek">A classroom simulation of supply chain dynamics, built independently from published research (Forrester; Sterman 1989).</p>
+
+    <div class="card">
+      <h2>How this works</h2>
+      <p>Your group plays one linear supply chain: <b>Retailer → Wholesaler → Distributor → Factory</b>. Four students, four roles, one each. If your group has five, pair up on one role and decide together — talk it through before entering an order.</p>
+      <p>Each round, every role sees <b>only their own numbers</b>: their inventory or backlog, what just arrived, and the order that just came in from downstream. On that alone, they decide how much to order from their own supplier. Orders take <b>2 rounds</b> to reach the supplier; shipments take <b>2 more rounds</b> to arrive back.</p>
+      <p><b>Played on one shared device, passed role to role.</b> When it isn't your turn, don't look at the screen. Tap the ⤢ Full screen control in the corner before you start. On an iPhone, where full screen isn't available, use Share → Add to Home Screen and open the game from the icon.</p>
+      <hr class="rule">
+      <div class="row">
+        <div>
+          <label for="rounds">Rounds</label>
+          <input type="number" id="rounds" value="16" min="8" max="30">
+        </div>
+        <div>
+          <label for="presetSeed">Scenario</label>
+          <select id="presetSeed" onchange="applyPresetSeed()" style="font-family:var(--jnc-sans);font-size:0.95rem;padding:10px 12px;border:1px solid var(--jnc-text);background:#fff;color:var(--jnc-text);border-radius:0">
+            <option value="">Random (new each time)</option>
+            ${PRESET_SCENARIOS.map((s, i) => `<option value="${s}">Scenario ${i + 1}</option>`).join('')}
+            <option value="__custom__">Custom seed…</option>
+          </select>
+          <input type="text" id="seed" class="seed" placeholder="leave blank for random" value="${savedSeed}" style="display:none;margin-top:8px">
+        </div>
+      </div>
+      <p class="dek" style="margin:12px 0 0">Same seed produces same game.  Use the same seed to have groups face identical scenario for comparison.</p>
+      <div style="margin-top:20px"><button onclick="startGame()">Start Game</button></div>
+    </div>
+
+    <details class="card">
+      <summary>Full rules</summary>
+      <p style="margin-top:14px">Costs: <b>$0.50</b> per unit of inventory held per round, <b>$1.00</b> per unit of unfilled backorder per round. You cannot ship more than you have; unfilled demand carries forward as backlog until you can fill it. There is no penalty for ordering, only for the inventory or backlog consequences once the delays catch up with you.</p>
+      <p>Customer demand starts steady and changes once, partway through the game. You are not told when or by how much in advance.</p>
+    </details>
+  `;
+}
+
+function applyPresetSeed() {
+  const picker = document.getElementById('presetSeed');
+  const input = document.getElementById('seed');
+  if (picker.value === '__custom__') {
+    input.style.display = '';
+    input.value = '';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = picker.value; // '' for Random, or the preset seed string
+  }
+}
+
+function startGame() {
+  const rounds = parseInt(document.getElementById('rounds').value, 10) || 16;
+  const seed = document.getElementById('seed').value.trim();
+  game = newGame(rounds, seed);
+  beginRound();
+}
+
+function beginRound() {
+  processRoundArrivals(game);
+  game.currentRoleIdx = 0;
+  game.phase = 'privacy';
+  render();
+}
+
+function renderPrivacy() {
+  const idx = game.currentRoleIdx;
+  const name = ROLE_NAMES[idx];
+  const color = ROLE_COLORS_HEX[idx];
+  app.innerHTML = `
+    <div class="privacy-screen">
+      <p class="progress">Round ${game.round} of ${game.totalRounds}</p>
+      <div class="glyph">· · ·</div>
+      <h2>Pass the device to the <span style="color:${color}">${name}</span></h2>
+      <p class="dek">Everyone else, please look away. This screen shows only ${name}'s information.</p>
+      <button onclick="revealDecision()">I am the ${name} — show my screen</button>
+    </div>
+  `;
+}
+
+function revealDecision() {
+  game.phase = 'decision';
+  render();
+}
+
+function renderDecision() {
+  const idx = game.currentRoleIdx;
+  const r = game.roles[idx];
+  const color = ROLE_COLORS_HEX[idx];
+  const lastOrders = r.orderHistory.slice(-3).reverse();
+  app.innerHTML = `
+    <p class="progress">Round ${game.round} of ${game.totalRounds}</p>
+    <h1><span class="role-badge" style="background:${color}">${r.name}</span></h1>
+    <p class="dek">Only you can see this. Decide from your own numbers — you don't know what the other stages see.</p>
+    <div class="card">
+      <div class="row">
+        <div class="stat ${r.inventory === 0 && r.backlog > 0 ? 'neg' : ''}">
+          <label>On hand</label><div class="val">${r.inventory}</div>
+        </div>
+        <div class="stat ${r.backlog > 0 ? 'neg' : ''}">
+          <label>Backlog owed</label><div class="val">${r.backlog}</div>
+        </div>
+        <div class="stat">
+          <label>${idx === 0 ? 'Customer order, this round' : 'Order from ' + DOWNSTREAM_LABEL[idx].replace('the ', '')}</label>
+          <div class="val">${r.incomingOrderThisRound}</div>
+        </div>
+        <div class="stat">
+          <label>You shipped, this round</label><div class="val">${r.shippedThisRound}</div>
+        </div>
+      </div>
+      <hr class="rule">
+      <p class="dek" style="margin-bottom:4px">Your last orders (most recent first): ${lastOrders.length ? lastOrders.join(', ') : '—'}</p>
+      <p class="dek" style="margin-bottom:0">Running cost so far: $${r.cumulativeCost.toFixed(2)} — $0.50/unit held + $1.00/unit backordered, per round.</p>
+    </div>
+    <div class="card">
+      <label for="orderInput">How much do you order from ${UPSTREAM_LABEL[idx]}, this round?</label>
+      <input type="number" id="orderInput" min="0" step="1" autofocus>
+      <div style="margin-top:18px"><button onclick="confirmOrder()">Confirm order</button></div>
+    </div>
+  `;
+  setTimeout(() => document.getElementById('orderInput')?.focus(), 50);
+}
+
+function confirmOrder() {
+  const val = document.getElementById('orderInput').value;
+  if (val === '' || isNaN(val) || Number(val) < 0) { alert('Enter a whole number, 0 or more.'); return; }
+  submitOrder(game, game.currentRoleIdx, Number(val));
+  if (game.currentRoleIdx < 3) {
+    game.currentRoleIdx += 1;
+    game.phase = 'privacy';
+  } else {
+    game.phase = 'roundDone';
+  }
+  render();
+}
+
+function renderRoundDone() {
+  const done = game.round >= game.totalRounds;
+  app.innerHTML = `
+    <div class="privacy-screen">
+      <p class="progress">Round ${game.round} of ${game.totalRounds}</p>
+      <h2>Round ${game.round} complete.</h2>
+      <p class="dek">All four orders are placed. ${done ? 'That was the last round.' : 'Nothing sensitive on this screen — safe for everyone to look at.'}</p>
+      <button onclick="${done ? 'finishGame()' : 'beginRound()'}">${done ? 'See results' : 'Start round ' + (game.round + 1)}</button>
+    </div>
+  `;
+}
+
+function finishGame() {
+  game.phase = 'end';
+  render();
+}
+
+function stdev(arr) {
+  const m = arr.reduce((a, b) => a + b, 0) / arr.length;
+  return Math.sqrt(arr.reduce((a, b) => a + (b - m) ** 2, 0) / arr.length);
+}
+
+function renderEnd() {
+  const roles = game.roles;
+  const totalCost = roles.reduce((a, r) => a + r.cumulativeCost, 0);
+  const d = game.demand;
+  app.innerHTML = `
+    <p class="eyebrow">Results</p>
+    <h1>Round ${game.totalRounds} of ${game.totalRounds}</h1>
+    <p class="dek">This scenario's demand step: ${d.baseline} → ${d.newLevel} units/round, beginning round ${d.shockRound}. ${game.seedStr ? `Seed: <code>${game.seedStr}</code>` : '(random scenario, not seeded)'}</p>
+
+    <div class="card">
+      <h2>Orders placed, round by round</h2>
+      <canvas id="chart" width="820" height="360"></canvas>
+      <div class="legend">
+        <span><span class="swatch" style="background:${ROLE_COLORS_HEX[0]}"></span>Retailer</span>
+        <span><span class="swatch" style="background:${ROLE_COLORS_HEX[1]}"></span>Wholesaler</span>
+        <span><span class="swatch" style="background:${ROLE_COLORS_HEX[2]}"></span>Distributor</span>
+        <span><span class="swatch" style="background:${ROLE_COLORS_HEX[3]}"></span>Factory</span>
+        <span><span class="swatch" style="background:#9a968b"></span>Actual customer demand</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Cost and order variance by stage</h2>
+      <table>
+        <tr><th>Stage</th><th>Order std. dev.</th><th>Peak order</th><th>Total cost</th></tr>
+        ${roles.map(r => `
+          <tr>
+            <td><span class="role-badge" style="background:${ROLE_COLORS_HEX[r.idx]}">${r.name}</span></td>
+            <td>${stdev(r.orderHistory).toFixed(1)}</td>
+            <td>${Math.max(...r.orderHistory)}</td>
+            <td>$${r.cumulativeCost.toFixed(2)}</td>
+          </tr>`).join('')}
+        <tr><td><b>Total supply chain cost</b></td><td></td><td></td><td><b>$${totalCost.toFixed(2)}</b></td></tr>
+      </table>
+      <p class="dek" style="margin-top:14px">Actual customer demand moved once. Compare that to how much the orders upstream moved.</p>
+    </div>
+
+    <div class="card">
+      <h2>Before you discuss as a class — talk it through in your group first</h2>
+      <div class="debrief-q">Look at the chart. At what point did your group's orders stop tracking what was actually happening downstream, and start tracking what you <i>expected</i> or <i>feared</i> was happening?</div>
+      <div class="debrief-q">Pick one round where you (as your role) ordered a lot. What did you <b>notice</b> that round, how did you <b>label</b> it ("we're behind," "demand is exploding," "they're panicking"), and what did that label make you <b>do</b>?</div>
+      <div class="debrief-q">Nobody in your chain could see the actual customer demand except the Retailer. What frame was each of you using to guess at it — and what did that frame hide from you?</div>
+      <div class="debrief-q">If you played again with full visibility into every stage's real numbers, what changes? What does that tell you about whether this was a <i>people</i> problem or a <i>structure</i> problem?</div>
+    </div>
+
+    <div class="footer-links">
+      <a onclick="downloadCSV()">Download round-by-round data (CSV)</a>
+      <a onclick="downloadChartPNG()">Download chart (PNG)</a>
+      <a onclick="if(confirm('Start a new game? This clears current results.')) { game = newGame(game.totalRounds, ''); render(); }">New game</a>
+    </div>
+
+    <div class="colophon">
+      <p>Exercise design: J. W. Forrester and the MIT System Dynamics Group, who developed the original production-distribution simulation in the late 1950s out of Forrester's industrial dynamics research (Forrester, J. W. (1961), <i>Industrial Dynamics</i>, MIT Press). J. D. Sterman named it the "Beer Distribution Game" and ran the canonical behavioral study this implementation's demand-shock design follows: Sterman, J. D. (1989), "Modeling Managerial Behavior: Misperceptions of Feedback in a Dynamic Decision Making Experiment," <i>Management Science</i> 35(3), 321–339. This implementation is an independent build reproducing that structure and those parameters, not an official MIT Sloan product.</p>
+      <p>Cohen, J. N. (2026). <i>Supply Chain Simulator</i> (Version 1.0.0) [Web application]. <span class="cc-badge">CC BY-NC-SA 4.0</span></p>
+      <p><a href="https://jncohen.commons.gc.cuny.edu/supply-chain-simulator/" target="_blank" rel="noopener" style="color:var(--jnc-blue)">Joseph Cohen, Dept. of Sociology, CUNY Queens College. July 2026.</a></p>
+    </div>
+  `;
+  drawChart();
+}
+
+function drawChart() {
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const padL = 40, padB = 30, padT = 10, padR = 10;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const series = [
+    { data: game.demandHistory, color: '#9a968b', dashed: true },
+    ...game.roles.map(r => ({ data: r.orderHistory, color: ROLE_COLORS_HEX[r.idx], dashed: false })),
+  ];
+  const allVals = series.flatMap(s => s.data);
+  const maxY = Math.max(...allVals, 10) * 1.1;
+  const n = game.totalRounds;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#dcd7ca';
+  ctx.fillStyle = '#6c685f';
+  ctx.font = '11px Helvetica, Arial, sans-serif';
+  ctx.lineWidth = 1;
+  for (let g = 0; g <= 4; g++) {
+    const y = padT + plotH - (g / 4) * plotH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillText(Math.round((g / 4) * maxY), 4, y + 4);
+  }
+  for (let rnd = 1; rnd <= n; rnd += Math.ceil(n / 8)) {
+    const x = padL + ((rnd - 1) / (n - 1)) * plotW;
+    ctx.fillText(rnd, x - 4, H - 10);
+  }
+
+  series.forEach(s => {
+    ctx.beginPath();
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = s.dashed ? 2 : 2.5;
+    if (s.dashed) ctx.setLineDash([5, 4]); else ctx.setLineDash([]);
+    s.data.forEach((v, i) => {
+      const x = padL + (n > 1 ? (i / (n - 1)) * plotW : 0);
+      const y = padT + plotH - (v / maxY) * plotH;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+}
+
+function downloadChartPNG() {
+  const canvas = document.getElementById('chart');
+  const W = canvas.width, H = canvas.height;
+  const WATERMARK_STRIP = 24;
+
+  // Composite onto a fresh, fully opaque canvas with its own watermark strip
+  // below the plot, so the credit line never overlaps the axis labels or
+  // data. The on-screen chart used during play is untouched.
+  const out = document.createElement('canvas');
+  out.width = W;
+  out.height = H + WATERMARK_STRIP;
+  const octx = out.getContext('2d');
+  octx.fillStyle = '#fff';
+  octx.fillRect(0, 0, out.width, out.height);
+  octx.drawImage(canvas, 0, 0);
+
+  const watermark = 'Supply Chain Simulation by Joseph N. Cohen, CUNY Queens College';
+  octx.font = '11px Helvetica, Arial, sans-serif';
+  octx.fillStyle = 'rgba(108, 104, 95, 0.75)';
+  octx.textAlign = 'right';
+  octx.textBaseline = 'middle';
+  octx.fillText(watermark, W - 10, H + WATERMARK_STRIP / 2);
+  octx.textAlign = 'left';
+  octx.textBaseline = 'alphabetic';
+
+  const a = document.createElement('a');
+  a.href = out.toDataURL('image/png');
+  a.download = 'supply-chain-game-chart.png';
+  a.click();
+}
+
+function downloadCSV() {
+  const rows = [['round', 'customer_demand',
+    'retailer_order', 'retailer_inventory', 'retailer_backlog',
+    'wholesaler_order', 'wholesaler_inventory', 'wholesaler_backlog',
+    'distributor_order', 'distributor_inventory', 'distributor_backlog',
+    'factory_order', 'factory_inventory', 'factory_backlog']];
+  for (let i = 0; i < game.totalRounds; i++) {
+    rows.push([
+      i + 1, game.demandHistory[i],
+      ...game.roles.flatMap(r => [r.orderHistory[i], r.inventoryHistory[i], r.backlogHistory[i]]),
+    ]);
+  }
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'supply-chain-game-results.csv';
+  a.click();
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.().catch(() => {
+      alert('Full screen isn\'t available in this browser.');
+    });
+  } else {
+    document.exitFullscreen?.();
+  }
+}
+
+render();
+</script>
+</body>
+</html>

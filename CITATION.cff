@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+abstract: "A free, browser-based classroom simulation of the bullwhip effect in a four-stage supply chain, for one shared device per group of four, with seeded scenarios and an end-of-game debrief."
+title: "Supply Chain Simulator"
+type: software
+version: "1.0.0"
+authors:
+  - family-names: "Cohen"
+    given-names: "Joseph N."
+    website: "https://jncohen.commons.gc.cuny.edu"
+date-released: 2026-10-16
+url: "https://jncohen.commons.gc.cuny.edu/supply-chain-simulator/"
+repository-code: "https://github.com/jncohen/supply-chain-simulation"
+license: "CC-BY-NC-SA-4.0"
+keywords:
+  - supply-chain
+  - bullwhip-effect
+  - beer-game
+  - system-dynamics
+  - teaching-tool
+  - sensemaking
+  - classroom-simulation
